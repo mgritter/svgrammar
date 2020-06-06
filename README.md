@@ -3,7 +3,7 @@
 This project extends [Soffit](https://github.com/mgritter/soffit) with the 
 capapbility to output Scalable Vector Graphics.
 
-For draft documentation of the capabilities, see [docs/README.md](docs/README.md).
+For draft documentation of the capabilities, see [doc/README.md](doc/README.md).
 
 To use, create a virtual environment with pipenv, then run
 
