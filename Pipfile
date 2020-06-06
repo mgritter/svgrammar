@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+matplotlib = "*"
+pygraphviz = "*"
+svgwrite = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.8"
+
+[packages.soffit]
+git = "https://github.com/mgritter/soffit"
+ref = "v0.0.3"
+editable = true

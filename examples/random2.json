@@ -1,0 +1,30 @@
+{
+    "version" : "0.1",
+    "start" : "C100[hundred_circles]; X[firstcircle]; SVG[svg]; SVG->WIDTH[width]; WIDTH[400]; SVG->HEIGHT[height]; HEIGHT[400]",
+
+    "C[firstcircle]" :
+    "C[circle]; C->CXP[cx]; C->CYP[cy]; CXP[+]; CYP[+]; CXP->H; CYP->H; H[200]; C->R[r]; R[10]; C->STROKE[stroke]; STROKE[rgb]; STROKE->RED [r]; STROKE->GREEN [g]; STROKE->BLUE [b]; RED[+]; RED2[100]; RED->RED2; GREEN[0]; BLUE[0]; C->FILL[fill]; FILL[none]; PC[prev_circle]; PC->C",
+
+    "C[ten_circles]" : "C0[cc]; C1[cc]; C2[cc]; C3[cc]; C4[cc]; C5[cc]; C6[cc]; C7[cc]; C8[cc]; C9[cc]",
+    "C[hundred_circles]" : "C0[ten_circles]; C1[ten_circles]; C2[ten_circles]; C3[ten_circles]; C4[ten_circles]; C5[ten_circles]; C6[ten_circles]; C7[ten_circles]; C8[ten_circles]; C9[ten_circles]",
+    
+    "C2[cc];     PC[prev_circle]; C1[circle]; PC->C1" :
+    "C2[circle]; PC[prev_circle]; C1[circle]; PC->C2; C2->CX[cx]; C2->CY[cy]; C2->R[r]; C2->STROKE[stroke]; C2->FILL[fill]; R[10]; CX[need_x]; CY[need_y]; STROKE[need_stroke]; FILL[none]; CX->C1[prev]; CY->C1[prev]; STROKE->C1[prev]",
+
+    "X[need_x]; X->CIRC[prev]; CIRC[circle]; CIRC->CX[cx]; CX[+]" : 
+    "X[+];                     CIRC[circle]; CIRC->CX[cx]; CX[+]; X->CX; X->DELTA; DELTA[rand_delta]",
+    
+    "Y[need_y]; Y->CIRC[prev]; CIRC[circle]; CIRC->CY[cy]; CY[+]" : 
+    "Y[+];                     CIRC[circle]; CIRC->CY[cy]; CY[+]; Y->CY; Y->DELTA; DELTA[rand_delta]",
+        
+    "DELTA[rand_delta]" : [ "DELTA[-7]",
+                            "DELTA[7]" ],
+
+    
+    "S[need_stroke]; S->CIRC[prev]; CIRC[circle]; CIRC->RGB[stroke]; RGB[rgb]; RGB->PRED[r]; PRED[+]" :
+    "S[rgb];                        CIRC[circle]; CIRC->RGB[stroke]; RGB[rgb]; RGB->PRED[r]; PRED[+]; S->GREEN[g]; S->BLUE[b]; S->RED[r]; GREEN[0]; BLUE[0]; RED[+]; RED->PRED; RED->ONE; ONE[1]"
+
+
+}    
+
+    

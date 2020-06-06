@@ -1,0 +1,71 @@
+{
+    "version" : "0.1",
+    "start" : "C100[hundred_groups]; START[start]; GROUP[og]; START->GROUP;",
+
+    "C[ten_groups]" : "C0[tg]; C1[tg]; C2[tg]; C3[tg]; C4[tg]; C5[tg]; C6[tg]; C7[tg]; C8[tg]; C9[tg]",
+    "C[hundred_groups]" : "C0[ten_groups]; C1[ten_groups]; C2[ten_groups]; C3[ten_groups]; C4[ten_groups]; C5[ten_groups]; C6[ten_groups]; C7[ten_groups]; C8[ten_groups]; C9[ten_groups]",
+    
+    "G[tg]; START[start]; OG[g]; START->OG" :
+    "G[g];  START[start]; OG[g]; START->OG; G->T[transform]; T[random_translation]; G->OG",
+
+    "GROUP[og]" :
+    "GROUP[g]; GROUP->CIRC; GROUP->RECT; CIRC[rand_circ]; RECT[rand_rect]",
+
+    "C[rand_circ]" : [
+        "C[circle]; C->CX[cx]; C->CY[cy]; C->R[r]; C->FILL[fill]; C->STROKE[stroke]; CX[-2]; CY[-1]; R[3]; FILL[none]; STROKE[green]",
+        "C[circle]; C->CX[cx]; C->CY[cy]; C->R[r]; C->FILL[fill]; C->STROKE[stroke]; CX[0]; CY[0]; R[2]; FILL[none]; STROKE[red]"
+    ],
+    
+    "R[rand_rect]" : "R[rect]; R->RX[x]; R->RY[y]; R->RW[width]; R->RH[height]; R->FILL[fill]; R->STROKE[stroke]; RX[-3]; RY[-3]; RW[7]; RH[4]; FILL[none]; STROKE[blue]",
+    
+    "T[random_translation]" : "T[##]; T->T1[1]; T->T2[2]; T1[rotate]; T1->A [d]; A[rand_angle]; T2[translate]; X[rand_x]; Y[rand_y]; T2->X[x]; T2->Y[y]",
+
+    "A[rand_angle]" : [ "A[30]",
+                        "A[45]",
+                        "A[90]",
+                        "A[120]",
+                        "A[355]" ],
+                       
+    "POS[rand_x]" : [ "POS[10]",
+                      "POS[20]",
+                      "POS[30]",
+                      "POS[40]",
+                      "POS[50]",
+                      "POS[60]",
+                      "POS[70]",
+                      "POS[80]",
+                      "POS[90]",
+                      "POS[100]",
+                      "POS[110]",
+                      "POS[120]",
+                      "POS[130]",
+                      "POS[140]",
+                      "POS[150]",
+                      "POS[160]",
+                      "POS[170]",
+                      "POS[180]",
+                      "POS[190]",
+                      "POS[200]"],
+    
+    "POS[rand_y]" : [ "POS[10]",
+                      "POS[20]",
+                      "POS[30]",
+                      "POS[40]",
+                      "POS[50]",
+                      "POS[60]",
+                      "POS[70]",
+                      "POS[80]",
+                      "POS[90]",
+                      "POS[100]",
+                      "POS[110]",
+                      "POS[120]",
+                      "POS[130]",
+                      "POS[140]",
+                      "POS[150]",
+                      "POS[160]",
+                      "POS[170]",
+                      "POS[180]",
+                      "POS[190]",
+                      "POS[200]"]
+}
+    

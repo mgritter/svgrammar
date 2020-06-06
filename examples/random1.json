@@ -1,0 +1,29 @@
+{
+    "version" : "0.1",
+    "start" : "C100[hundred_circles]; PP[+]; PP->HH; HH[100]; PREV[px]; PREV2[py]; PREV->PP; PREV2->PP",
+
+    "C[ten_circles]" : "C0[cc]; C1[cc]; C2[cc]; C3[cc]; C4[cc]; C5[cc]; C6[cc]; C7[cc]; C8[cc]; C9[cc]",
+    "C[hundred_circles]" : "C0[ten_circles]; C1[ten_circles]; C2[ten_circles]; C3[ten_circles]; C4[ten_circles]; C5[ten_circles]; C6[ten_circles]; C7[ten_circles]; C8[ten_circles]; C9[ten_circles]",
+    
+    "C[cc]" : "C[circle]; C->CX[cx]; C->CY[cy]; C->R[r]; R[10]; CX[rand_x]; CY[rand_y]; C->STROKE[stroke]; STROKE[randcolor]; C->FILL[fill]; FILL[none]",
+
+    "X[rand_x]; PREV[px]; PLUS[+]; PREV->PLUS" : 
+    "X[+];      PREV[px]; PLUS[+]; PREV->X; X->PLUS; X->DELTA; DELTA[rand_delta]",
+
+    "X[rand_y]; PREV[py]; PLUS[+]; PREV->PLUS" : 
+    "X[+];      PREV[py]; PLUS[+]; PREV->X; X->PLUS; X->DELTA; DELTA[rand_delta]",
+    
+    "X[rand_delta]" : [ "X[-9]",
+                        "X[-4]",
+                        "X[4]",
+                        "X[4]",
+                        "X[9]"
+                      ],
+    
+    "X[randcolor]" : [ "X[red]",
+                       "X[green]",
+                       "X[blue]" ]
+
+}    
+
+    
