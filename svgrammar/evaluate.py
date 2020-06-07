@@ -23,6 +23,12 @@ class Evaluation(object):
                      if tag != "next" ]
         else:
             return self.graph.successors( n )
+
+    def list_successors( self, n ):
+        assert self.in_list
+        
+        return [ j for i,j,tag in self.graph.out_edges( n, data="tag" )
+                 if tag == "next" ]
         
     def children( self, n ):
         if self.in_list:
@@ -54,6 +60,24 @@ class Evaluation(object):
             if tag in kv:
                 raise Exception( "Duplicate keyword {} in node {}".format( tag, n ) )
             kv[tag] = self.node_value( j, [n] )
+            
+        return kv
+
+    def successor_value_dictionary_with_lists( self, n, list_attrs ):
+        # Interpret edges with tags in list_attrs as the start of a list
+        # rather than a string value.
+        kv = {}
+        for tag, j in self.children( n ):
+            if tag is None:
+                continue
+            if tag in kv:
+                raise Exception( "Duplicate keyword {} in node {}".format( tag, n ) )
+            if tag in list_attrs:
+                e_list = Evaluation( self.graph, in_list = True )
+                kv[tag] = e_list.list_value( j, [n] )
+            else:
+                kv[tag] = self.node_value( j, [n] )
+                
             
         return kv
 
@@ -145,7 +169,18 @@ class Evaluation(object):
         else:
                 return tag
         
+    def list_value( self, n, visited ):
+        assert self.in_list
         
-def extract_all_attributes( g, n ):
+        v = self.node_value( n, visited )
+        list_next = self.list_successors( n )
+        ret = [v]
+        for ln in list_next:
+            ret += self.list_value( ln, visited + [n] )
+        return ret
+        
+def extract_all_attributes( g, n, list_attrs = None ):
     ev = Evaluation( g, in_list = False )
-    return ev.successor_value_dictionary( n )
+    return ev.successor_value_dictionary_with_lists( n, list_attrs )
+
+

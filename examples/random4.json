@@ -1,0 +1,18 @@
+{
+    "version" : "0.1",
+    "start" : "C100[hundred_steps]; PATH[path]; PATH->HEAD[d_list]; HEAD[M 100 100]; HEAD->TAIL[next]; TAIL[M 0 0]; PATH->STROKE[stroke]; STROKE[red]; PATH->FILL [fill]; FILL[none]",
+
+    "C[ten_steps]" : "C0[step]; C1[step]; C2[step]; C3[step]; C4[step]; C5[step]; C6[step]; C7[step]; C8[step]; C9[step]",
+    "C[hundred_steps]" : "C0[ten_steps]; C1[ten_steps]; C2[ten_steps]; C3[ten_steps]; C4[ten_steps]; C5[ten_steps]; C6[ten_steps]; C7[ten_steps]; C8[ten_steps]; C9[ten_steps]",
+
+    "STEP[step]; D[M 0 0];" :
+    "TAIL[M 0 0]; D->TAIL[next]; D[rand_delta]",
+    
+    "DELTA[rand_delta]" : [ "DELTA[l 0 -5]",
+                            "DELTA[l -5 0]",
+                            "DELTA[l 0 5]",
+                            "DELTA[l 5 0]" ]
+
+}    
+
+    

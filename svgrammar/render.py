@@ -2,7 +2,7 @@ import networkx as nx
 import svgwrite
 from .evaluate import extract_all_attributes
 
-svgElements = [ 'g', 'svg', 'rect', 'circle' ]
+svgElements = [ 'g', 'svg', 'rect', 'circle', 'path' ]
 
 def consume_float( attr, key, default ):
     if key in attr:
@@ -53,6 +53,21 @@ def draw_rect( drawing, in_group, g, n ):
 
     in_group.add( drawing.rect( (x, y), (width, height), **attr ) )
 
+def draw_path( drawing, in_group, g, n ):
+    attr = extract_all_attributes( g, n, ["d_list"] )
+    if "d_list" in attr:
+        d = " ".join( attr.pop( "d_list" ) )
+        if "d" in attr:
+            print( "Both d_list and d found at node {}", n )
+            del attr["d"]
+    elif "d" in attr:
+        d = attr.pop( "d" )
+    else:
+        d = ""
+        
+    strip_invalid_attributes( "path", attr )
+    in_group.add( drawing.path( d, **attr ) )
+
 def create_group( drawing, in_group, g, n ):
     attr = extract_all_attributes( g, n )
     children = []
@@ -65,6 +80,7 @@ def create_group( drawing, in_group, g, n ):
     in_group.add( group )
 
     return group, find_order( g, children )
+
     
 def render_to_drawing( drawing, in_group, g, elems, parents = [] ):
     for e in elems:
@@ -76,6 +92,8 @@ def render_to_drawing( drawing, in_group, g, elems, parents = [] ):
             draw_rect( drawing, in_group, g, e )
         elif tag == "circle":
             draw_circle( drawing, in_group, g, e )
+        elif tag == "path":
+            draw_path( drawing, in_group, g, e )
         elif tag == "g":
             group, children = create_group( drawing, in_group, g, e )
             render_to_drawing( drawing, group, g, children, parents + [e] )
