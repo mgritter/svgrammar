@@ -1,0 +1,13 @@
+{
+    "version" : "0.1",
+
+    "start" : "B[big]; M[med]; L[little]; B->M [below]; M->L [below];",
+
+    "B[big]" : "B[circle]; B->FILL [fill]; FILL[blue]; B->STROKE [stroke]; STROKE[black]; B->CX [cx]; CX[100]; B->CY [cy]; CY[100]; B->R [r]; R[50]",
+
+    "M[med]" : "M[circle]; M->FILL [fill]; FILL[red]; M->STROKE [stroke]; STROKE[black]; M->CX [cx]; CX[100]; M->CY [cy]; CY[100]; M->R [r]; R[20]",
+
+    "L[little]" : "L[circle]; L->FILL [fill]; FILL[purple]; L->STROKE [stroke]; STROKE[black]; L->CX [cx]; CX[100]; L->CY [cy]; CY[100]; L->R [r]; R[5]"
+    
+}
+    

@@ -15,11 +15,32 @@ def consume_float( attr, key, default ):
         
     return default
 
+# FIXME: need to filter any disallowed attributes or
+# svgwrite will error out.
+
+validator = svgwrite.validator2.get_validator( "full" )
+
+expected_invalid = set( ["below", "adjacent-left", "adjacent-right",
+                         "adjacent-above", "adjacent-below", "place-left",
+                         "place-right", "place-above", "place-below" ])
+
+def strip_invalid_attributes( elementname, attr ):
+    for k in list( attr.keys() ):
+        try:
+            validator.check_svg_attribute_value( elementname, k, attr[k] )
+        except ValueError:
+            if k not in expected_invalid:
+                print( 'Removed attribute {}="{}"'.format( k, attr[k] ) )
+            del attr[k]
+            
+    return attr
+    
 def draw_circle( drawing, in_group, g, n ):
     attr = extract_all_attributes( g, n )
     x = consume_float( attr, "cx", 0 )
     y = consume_float( attr, "cy", 0 )
     radius = consume_float( attr, "r", 0 )
+    strip_invalid_attributes( "circle", attr )
     in_group.add( drawing.circle( (x, y), radius, **attr) )
         
 def draw_rect( drawing, in_group, g, n ):
@@ -28,6 +49,8 @@ def draw_rect( drawing, in_group, g, n ):
     y = consume_float( attr, "y", 0 )
     width = consume_float( attr, "width", 0 )
     height = consume_float( attr, "height", 0 )
+    strip_invalid_attributes( "rect", attr )
+
     in_group.add( drawing.rect( (x, y), (width, height), **attr ) )
 
 def create_group( drawing, in_group, g, n ):
@@ -36,6 +59,8 @@ def create_group( drawing, in_group, g, n ):
     for i, j, t in g.out_edges( n, data="tag" ):
         if t is None:
             children.append( j )
+            
+    strip_invalid_attributes( "g", attr )
     group = drawing.g( **attr )    
     in_group.add( group )
 
