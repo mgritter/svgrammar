@@ -1,83 +1,13 @@
 import networkx as nx
 import svgwrite
+from .evaluate import extract_all_attributes
 
 svgElements = [ 'g', 'svg', 'rect', 'circle' ]
 
-def eval_expression( g, n, visited = [] ):
-    # OK to visit the same node more than once, just not as a child
-    # of itself.
-    if n in visited:
-        raise Exception( "Circular evaluation at node '" + str( n ) + "'" )
-    
-    if "tag" not in g.nodes[n]:
-        return ""
-    tag = g.nodes[n]["tag"]
-    if tag == "!":
-        successors = list( g.successors( n ) )
-        if len( successors ) > 1:
-            raise Exception( "Too many children in '!' node '" + str( n ) + "'" )
-        return eval_expression( g, successors[0], visited + [n] )
-
-    if tag == "+":
-        if "value" in g.nodes[n]:
-            return g.nodes[n]["value"]
-        
-        total = 0
-        for nn in g.successors( n ):
-            text = eval_expression( g, nn, visited + [n] )
-            try:
-                total += int( text )
-            except ValueError:
-                # Silently treat as zero
-                continue
-        g.nodes[n]["value"] = str( total )
-        return str( total )
-
-    if tag == "rgb":
-        d = extract_attributes( g, n, visited + [n] )
-        red = min( int_or_zero( d, "r" ), 255 )
-        green = min( int_or_zero( d, "g" ), 255 )
-        blue = min( int_or_zero( d, "b" ), 255 )
-        return "rgb({},{},{})".format( red, green, blue )
-
-    if tag == "##":
-        d = extract_attributes( g, n, visited + [n] )
-        return " ".join( d[k] for k in sorted( d.keys() ) )
-
-    if tag == "translate" or tag == "scale":
-        d = extract_attributes( g, n, visited + [n] )
-        x = int_or_zero( d, "x" )
-        y = int_or_zero( d, "y" )
-        return "{}({},{})".format( tag, x,y )
-
-    if tag == "skewX" or tag == "skewY" or tag == "rotate":
-        # FIXME: allow unlabeled?
-        d = extract_attributes( g, n, visited + [n] )
-        if "d" in d:
-            deg = int_or_zero( d, "d" )
-        else:
-            deg = int_or_zero( d, list( d.keys() )[0] )
-        return "{}({})".format( tag, deg )
-
-    return tag
-
-def int_or_zero( d, key ):
-    try:
-        return int( d.get( key, 0 ) )
-    except ValueError:
-        return 0
-    
-def extract_attributes( g, n, visited = [] ):
-    kv = {}
-    for i, j, t in g.out_edges( n, data="tag" ):
-        if t is not None:
-            kv[t] = eval_expression( g, j, visited )
-    return kv
-
-def consume_int( attr, key, default ):
+def consume_float( attr, key, default ):
     if key in attr:
         try:
-            val = int( attr[key] )
+            val = float( attr[key] )
             del attr[key]
             return val
         except ValueError:
@@ -86,31 +16,30 @@ def consume_int( attr, key, default ):
     return default
 
 def draw_circle( drawing, in_group, g, n ):
-    attr = extract_attributes( g, n )
-    x = consume_int( attr, "cx", 0 )
-    y = consume_int( attr, "cy", 0 )
-    radius = consume_int( attr, "r", 0 )
+    attr = extract_all_attributes( g, n )
+    x = consume_float( attr, "cx", 0 )
+    y = consume_float( attr, "cy", 0 )
+    radius = consume_float( attr, "r", 0 )
     in_group.add( drawing.circle( (x, y), radius, **attr) )
         
 def draw_rect( drawing, in_group, g, n ):
-    attr = extract_attributes( g, n )
-    x = consume_int( attr, "x", 0 )
-    y = consume_int( attr, "y", 0 )
-    width = consume_int( attr, "width", 0 )
-    height = consume_int( attr, "height", 0 )
+    attr = extract_all_attributes( g, n )
+    x = consume_float( attr, "x", 0 )
+    y = consume_float( attr, "y", 0 )
+    width = consume_float( attr, "width", 0 )
+    height = consume_float( attr, "height", 0 )
     in_group.add( drawing.rect( (x, y), (width, height), **attr ) )
 
 def create_group( drawing, in_group, g, n ):
-    print( "Creating group for", n )
-    attr = extract_attributes( g, n )
+    attr = extract_all_attributes( g, n )
     children = []
     for i, j, t in g.out_edges( n, data="tag" ):
-        print( "Out edge:", i, j, t )
         if t is None:
             children.append( j )
     group = drawing.g( **attr )    
     in_group.add( group )
-    return group, children
+
+    return group, find_order( g, children )
     
 def render_to_drawing( drawing, in_group, g, elems, parents = [] ):
     for e in elems:
@@ -133,18 +62,33 @@ def graph_to_svg( g ):
     
     d = svgwrite.Drawing( size=("8in","8in") )
     if svg is not None:
-        attr = extract_attributes( g, svg )
+        attr = extract_all_attributes( g, svg )
         width = consume_int( attr, "width", 200 )
         height = consume_int( attr, "height", 200 )
         x = consume_int( attr, "x", 0 )
         y = consume_int( attr, "y", 0 )
         d.viewbox( x, y, width, height )
+        # TODO: remaining elements?
     else:
         d.viewbox( 0, 0, 200, 200 )
 
     render_to_drawing( d, d, g, elems )
 
     return d
+
+def find_order( graph, nodes ):
+    orderGraph = nx.DiGraph()
+    nodes = set( nodes )
+    
+    for n in nodes:
+        orderGraph.add_node( n )
+        for i, j, t in graph.out_edges( n, data="tag" ):
+            if t == "below":
+                # FIXME: cross-level constraints?
+                if j in nodes:
+                    orderGraph.add_edge( i, j )
+
+    return nx.algorithms.dag.topological_sort( orderGraph )
     
 # How do we tell whether an element is "top-level"?
 # This is the case whenever there is no inclusion path to it from
@@ -159,8 +103,6 @@ def graph_to_svg( g ):
 def top_level_elements( g ):
     """Find all recognized top-level tags within the graph, and sort them by
     z-order."""
-    orderGraph = nx.DiGraph()
-
     untaggedEdges = [ (i,j) for i,j,t in g.edges( data="tag" ) if t is None ]
     inclusionGraph = g.edge_subgraph( untaggedEdges ) 
     
@@ -181,17 +123,10 @@ def top_level_elements( g ):
             if not has_group_parent( inclusionGraph, n ):
                 topLevel.add( n )
 
-    print( "Top level: ", topLevel )
+    #print( "Top level: ", topLevel )
     
-    for n in topLevel:
-        orderGraph.add_node( n )
-        for i, j, t in g.out_edges( n, data="tag" ):
-            if t == "below":
-                # FIXME: cross-level constraints?
-                if j not in topLevel:
-                    orderGraph.add_edge( i, j )
+    return topTag, find_order( g, topLevel )
 
-    return topTag, nx.algorithms.dag.topological_sort( orderGraph )
 
 def has_group_parent( g, n ):
     if n not in g.nodes:
@@ -202,7 +137,7 @@ def has_group_parent( g, n ):
         if a == n:
             continue
         if g.nodes[a].get( 'tag', None ) == 'g':
-            print( "Node", n, "has ancestor", a )
+            # print( "Node", n, "has ancestor", a )
             return True
     return False
 

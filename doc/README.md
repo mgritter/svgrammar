@@ -30,6 +30,33 @@ A->F [height]; F[20];
 
 An SVG group ("g" tag) has unlabelled edges to all of its components.
 
+Supported elements:
+ * svg
+ * g
+ * circ
+ * rect
+ * path
+
+## paths
+
+A path can be given a simple string as a "d" child, as usual; this string
+can be constructed with concatenation with ##.
+
+However, we also permit a linked list of path elements. Use the edge tag
+d_head to mark the head of such a list, and the edge tag "next" to mark
+the next element of the list.  If any elements have multiple next edges
+then we visit them in random order.
+
+```
+A [path];
+A->HEAD [d_list]; HEAD [M]
+HEAD->X [next]; X[20]
+X->Y [next]; Y[20]
+Y->Z [next]; ...
+```
+
+The individual nodes in the list may be expressions, as described below.
+
 ## relative placements
 
 An SVG group can be placed relative to other groups by adding edges tagged with the relative
@@ -67,8 +94,7 @@ where R, G, B are numeric expressions. Any missing ones will be filled in with z
 
 ## Transformations
 
-A node tagged '##' will concatenate its elements in alphanumeric order of their tags, with spaces
-in between.  This can be used to combine multiple transformations.
+A node tagged '##' will concatenate its elements in alphanumeric order of their tags, with spaces in between.  This can be used to combine multiple transformations.
 
 A node tagged 'translate' or 'scale' combines the values of its 'x' and 'y' children, zero if absent.
 
