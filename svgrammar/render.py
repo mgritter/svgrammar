@@ -1,7 +1,24 @@
 import networkx as nx
 import svgwrite
 from .evaluate import extract_all_attributes
+import svgrammar.bounding as bounding
 
+# TODO: handle transform attribute
+
+class Element(object):
+    def __init__( self, n, svg, bb ):
+        self.svg_element = svg
+        self.bounding_box = bb
+        self.node = n
+        
+    def addElement( self, other ):
+        self.bounding_box.addElement( other.bounding_box )
+        self.svg_element.add( other.svg_element )
+
+    def doTransform( self ):
+        if "transform" in self.svg_element.attribs:
+            self.bounding_box.applyTransform( self.svg_element.attribs["transform"] )
+        
 svgElements = [ 'g', 'svg', 'rect', 'circle', 'path' ]
 
 def consume_float( attr, key, default ):
@@ -15,9 +32,7 @@ def consume_float( attr, key, default ):
         
     return default
 
-# FIXME: need to filter any disallowed attributes or
-# svgwrite will error out.
-
+# Filter out any unexpected attributes, or svgwrite will throw an exception.
 validator = svgwrite.validator2.get_validator( "full" )
 
 expected_invalid = set( ["below", "adjacent-left", "adjacent-right",
@@ -35,15 +50,18 @@ def strip_invalid_attributes( elementname, attr ):
             
     return attr
     
-def draw_circle( drawing, in_group, g, n ):
+def draw_circle( drawing, g, n ):
     attr = extract_all_attributes( g, n )
     x = consume_float( attr, "cx", 0 )
     y = consume_float( attr, "cy", 0 )
     radius = consume_float( attr, "r", 0 )
     strip_invalid_attributes( "circle", attr )
-    in_group.add( drawing.circle( (x, y), radius, **attr) )
+
+    return Element( n,
+                    drawing.circle( (x, y), radius, **attr),
+                    bounding.CircleBoundingBox( x, y, radius ) )
         
-def draw_rect( drawing, in_group, g, n ):
+def draw_rect( drawing, g, n ):
     attr = extract_all_attributes( g, n )
     x = consume_float( attr, "x", 0 )
     y = consume_float( attr, "y", 0 )
@@ -51,9 +69,11 @@ def draw_rect( drawing, in_group, g, n ):
     height = consume_float( attr, "height", 0 )
     strip_invalid_attributes( "rect", attr )
 
-    in_group.add( drawing.rect( (x, y), (width, height), **attr ) )
+    return Element( n,
+                    drawing.rect( (x, y), (width, height), **attr ),
+                    bounding.RectangleBoundingBox( x, y, width, height ) )
 
-def draw_path( drawing, in_group, g, n ):
+def draw_path( drawing, g, n ):
     attr = extract_all_attributes( g, n, ["d_list"] )
     if "d_list" in attr:
         d = " ".join( attr.pop( "d_list" ) )
@@ -66,9 +86,11 @@ def draw_path( drawing, in_group, g, n ):
         d = ""
         
     strip_invalid_attributes( "path", attr )
-    in_group.add( drawing.path( d, **attr ) )
+    return Element( n,
+                    drawing.path( d, **attr ),
+                    bounding.PathBoundingBox( d ) )
 
-def create_group( drawing, in_group, g, n ):
+def create_group( drawing, g, n ):
     attr = extract_all_attributes( g, n )
     children = []
     for i, j, t in g.out_edges( n, data="tag" ):
@@ -76,10 +98,10 @@ def create_group( drawing, in_group, g, n ):
             children.append( j )
             
     strip_invalid_attributes( "g", attr )
-    group = drawing.g( **attr )    
-    in_group.add( group )
-
-    return group, find_order( g, children )
+    element = Element( n,
+                       drawing.g( **attr ),
+                       bounding.GroupBoundingBox() )
+    return element, find_order( g, children )
 
     
 def render_to_drawing( drawing, in_group, g, elems, parents = [] ):
@@ -88,16 +110,27 @@ def render_to_drawing( drawing, in_group, g, elems, parents = [] ):
             raise Exception( "Circular rendering at node '" + str( e ) + "'" )
             
         tag = g.nodes[e]["tag"]
+        drawn = None
+        
         if tag == "rect":
-            draw_rect( drawing, in_group, g, e )
+            drawn = draw_rect( drawing, g, e )
         elif tag == "circle":
-            draw_circle( drawing, in_group, g, e )
+            drawn = draw_circle( drawing, g, e )
         elif tag == "path":
-            draw_path( drawing, in_group, g, e )
+            drawn = draw_path( drawing, g, e )
         elif tag == "g":
-            group, children = create_group( drawing, in_group, g, e )
-            render_to_drawing( drawing, group, g, children, parents + [e] )
-    
+            drawn, children = create_group( drawing, g, e )
+            render_to_drawing( drawing, drawn, g, children, parents + [e] )
+
+
+        if drawn is not None:
+            g.nodes[e]["drawn"] = drawn
+            drawn.doTransform()
+            #print( "element", tag, "bounding box:", drawn.bounding_box )
+            in_group.addElement( drawn )
+            # Do this after the recursive call so the bounding box is
+            # correct.
+        
 def graph_to_svg( g ):
     # TODO: placement
     # TODO: z-ordering within each group
@@ -115,7 +148,8 @@ def graph_to_svg( g ):
     else:
         d.viewbox( 0, 0, 200, 200 )
 
-    render_to_drawing( d, d, g, elems )
+    container = Element( d, bounding.GroupBoundingBox() )
+    render_to_drawing( d, container, g, elems )
 
     return d
 

@@ -179,7 +179,7 @@ class Evaluation(object):
             ret += self.list_value( ln, visited + [n] )
         return ret
         
-def extract_all_attributes( g, n, list_attrs = None ):
+def extract_all_attributes( g, n, list_attrs = [] ):
     ev = Evaluation( g, in_list = False )
     return ev.successor_value_dictionary_with_lists( n, list_attrs )
 
