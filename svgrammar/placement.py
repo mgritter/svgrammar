@@ -24,6 +24,7 @@ class Solver(object):
         self.paths = {}
         self.penalties = []
         self.temps = []
+        self.verbose = False
         
     def add_edge( self, e1, relation, e2 ):
         # e2 is considered fixed, e1 is variable
@@ -90,10 +91,11 @@ class Solver(object):
         ax1, ay1, ax2, ay2 = self.boundary_in( a, positions )
         bx1, by1, bx2, by2 = self.boundary_in( b, positions )
         
-        return max( min( ax2 - bx1,
-                         bx2 - ax1,
-                         ay2 - by1,
-                         by2 - ay1 ), 0.0 )
+        d =  max( min( ax2 - bx1,
+                       bx2 - ax1,
+                       ay2 - by1,
+                       by2 - ay1 ), 0.0 )
+        return d ** 2
 
     def left_midpoint( self, n, positions ):
         x1, y1, x2, y2 = self.boundary_in( n, positions )
@@ -116,29 +118,51 @@ class Solver(object):
 
         for a, r, b in self.relations:
             overlap = self.overlap_in( a, b, positions )
-            
+
+            # TODO: maybe midpoint distance is the wrong thing,
+            # we should weight gap between edges more heavily?
             if r == "adjacent-left":
                 mb = self.left_midpoint( b, positions )
                 ma = self.right_midpoint( a, positions )
-                total += distance( ma, mb ) * self.primary_scale + \
+                total += distance_sq( ma, mb ) * self.primary_scale + \
                     overlap * self.secondary_scale
             elif r == "adjacent-right":
                 mb = self.right_midpoint( b, positions )
                 ma = self.left_midpoint( a, positions )
-                total += distance( ma, mb ) * self.primary_scale + \
+                total += distance_sq( ma, mb ) * self.primary_scale + \
                     overlap * self.secondary_scale
-            elif r == "adjcent-above":
+            elif r == "adjacent-above":
                 mb = self.upper_midpoint( b, positions )
                 ma = self.lower_midpoint( a, positions )
-                total += distance( ma, mb ) * self.primary_scale + \
+                total += distance_sq( ma, mb ) * self.primary_scale + \
                     overlap * self.secondary_scale
-            elif r == "adjcent-below":
+            elif r == "adjacent-below":
                 mb = self.lower_midpoint( b, positions )
                 ma = self.upper_midpoint( a, positions )
-                total += distance( ma, mb ) * self.primary_scale + \
+                total += distance_sq( ma, mb ) * self.primary_scale + \
                     overlap * self.secondary_scale
             elif r == "disjoint":
                 total += overlap * self.primary_scale
+            elif r == "place-left":
+                mb = self.left_midpoint( b, positions )
+                ma = self.right_midpoint( a, positions )
+                total += distance_sq( ma, mb ) * self.secondary_scale + \
+                    overlap * self.primary_scale
+            elif r == "place-right":
+                mb = self.right_midpoint( b, positions )
+                ma = self.left_midpoint( a, positions )
+                total += distance_sq( ma, mb ) * self.secondary_scale + \
+                    overlap * self.primary_scale
+            elif r == "place-above":
+                mb = self.upper_midpoint( b, positions )
+                ma = self.lower_midpoint( a, positions )
+                total += distance_sq( ma, mb ) * self.secondary_scale + \
+                    overlap * self.primary_scale
+            elif r == "place-below":
+                mb = self.lower_midpoint( b, positions )
+                ma = self.upper_midpoint( a, positions )
+                total += distance_sq( ma, mb ) * self.secondary_scale + \
+                    overlap * self.primary_scale
             else:
                 print( "Unhandled relation", r )
                 
@@ -152,7 +176,12 @@ class Solver(object):
 
         # The size of the move should probably decrease with temperature.
 
-        a,b = random.sample( self.movable, 2 )
+        if len( self.movable ) > 1:
+            a,b = random.sample( self.movable, 2 )
+        else:
+            a = random.sample( self.movable, 1 )
+            b = None
+            
         np = positions.copy()
 
         scale = 1.0
@@ -172,7 +201,7 @@ class Solver(object):
                   np[a][1] + random.uniform( -a_height * scale,
                                              a_height * scale ) )
         
-        if random.random() < 0.3:
+        if b is not None and random.random() < 0.3:
             bb_b = self.bounding_box( b )
             b_width = bb_b.x2 - bb_b.x1
             b_height = bb_b.y2 - bb_b.y1
@@ -201,8 +230,9 @@ class Solver(object):
             current = np
             val = nv
 
-        print( "Num increases:", num_increases )
-        print( "Total increases:", total_increases )
+        if self.verbose:
+            print( "Num increases:", num_increases )
+            print( "Total increases:", total_increases )
         if num_increases == 0:
             return 1000.0
         else:
@@ -221,7 +251,8 @@ class Solver(object):
         step = self.random_change( self.current )
         penalty = self.penalty( step )
         p = self.probability_accept( self.current_penalty, penalty, self.temperature )
-        print( "delta", self.current_penalty - penalty, "prob", p )
+        if self.verbose:
+            print( "delta", self.current_penalty - penalty, "prob", p )
         if random.random() <= p:
             self.current = step
             self.current_penalty = penalty
@@ -232,10 +263,11 @@ class Solver(object):
             return True
         
         return False
-        
-    def annealing( self, num_iterations ):
+
+    def annealing( self, num_iterations = None ):
         min_temperature = 0.1
-        num_iterations = len( self.relations ) * 20
+        if num_iterations is None:
+            num_iterations = len( self.relations ) * 20
         max_accepts = 100
         accept_num = 0.0
         accept_denom = 0.0
@@ -256,19 +288,28 @@ class Solver(object):
                     if num_accepts >= max_accepts:
                         break
             if self.best_penalty == prev_best:
-                print( "No improvement at temperature", self.temperature )
-                ratio = accept_num / accept_denom
-                print( "Acceptance ratio:", ratio )
+                if self.verbose:
+                    print( "No improvement at temperature", self.temperature )
+                    ratio = accept_num / accept_denom
+                    print( "Acceptance ratio:", ratio )
                 
             self.temperature = self.decrease_temperature( self.temperature )
-            print( "*** Lowered temperature to", self.temperature )
+            if self.verbose:
+                print( "*** Lowered temperature to", self.temperature )
 
+        print( "Final penalty:", self.current_penalty )
+        print( "Best penalty:", self.best_penalty, "at temperature", self.best_temperature )
     
 
 def distance( a, b ):
     x1,y1 = a
     x2,y2 = b
     return math.sqrt( (x1-x2)**2 + (y1-y2)**2 )
+
+def distance_sq( a, b ):
+    x1,y1 = a
+    x2,y2 = b
+    return (x1-x2)**2 + (y1-y2)**2
 
 class FakeElement(object):
     def __init__( self, x1, y1, x2, y2 ):
@@ -283,25 +324,29 @@ if __name__ == "__main__":
     a = FakeElement( 10, 10, 20, 20 )
     b = FakeElement( 10, 10, 20, 20 )
     c = FakeElement( 10, 10, 20, 20 )
+    d = FakeElement( 10, 10, 20, 20 )
     g.add_node( "a", drawn=a ) 
-    g.add_node( "b", drawn=a ) 
-    g.add_node( "c", drawn=a ) 
+    g.add_node( "b", drawn=b ) 
+    g.add_node( "c", drawn=c ) 
+    g.add_node( "d", drawn=d ) 
     s = Solver( g )
-    s.add_edge( "a", "adjacent-left", "b" )
-    s.add_edge( "c", "adjacent-left", "b" )
+    s.verbose = True
+    s.add_edge( "a", "place-left", "b" )
+    s.add_edge( "c", "place-left", "b" )
     s.add_edge( "a", "disjoint", "c" )
+    s.add_edge( "d", "adjacent-left", "a" )
 
     s.start()
-    s.annealing( 100 )
+    s.annealing()
     print( "Best solution found:" )
     print( s.best_penalty )
     print( s.best )
     print( "at temperature", s.best_temperature )
 
-    plt.plot( [p[0] for p in s.paths["a"]],
-              [p[1] for p in s.paths["a"]] )
-    plt.plot( [p[0] for p in s.paths["c"]],
-              [p[1] for p in s.paths["c"]] )
+    #plt.plot( [p[0] for p in s.paths["a"]],
+    #          [p[1] for p in s.paths["a"]] )
+    #plt.plot( [p[0] for p in s.paths["c"]],
+    #          [p[1] for p in s.paths["c"]] )
     #plt.show()
 
     if False:

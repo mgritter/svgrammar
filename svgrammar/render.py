@@ -2,8 +2,7 @@ import networkx as nx
 import svgwrite
 from .evaluate import extract_all_attributes
 import svgrammar.bounding as bounding
-
-# TODO: handle transform attribute
+from .placement import Solver
 
 class Element(object):
     def __init__( self, n, svg, bb ):
@@ -18,6 +17,10 @@ class Element(object):
     def doTransform( self ):
         if "transform" in self.svg_element.attribs:
             self.bounding_box.applyTransform( self.svg_element.attribs["transform"] )
+
+    def translate( self, dx, dy ):
+        self.svg_element.translate( dx, dy )
+        self.bounding_box.translate( dx, dy )
         
 svgElements = [ 'g', 'svg', 'rect', 'circle', 'path' ]
 
@@ -35,9 +38,12 @@ def consume_float( attr, key, default ):
 # Filter out any unexpected attributes, or svgwrite will throw an exception.
 validator = svgwrite.validator2.get_validator( "full" )
 
-expected_invalid = set( ["below", "adjacent-left", "adjacent-right",
-                         "adjacent-above", "adjacent-below", "place-left",
-                         "place-right", "place-above", "place-below" ])
+placement_relations = set( ["adjacent-left", "adjacent-right",
+                            "adjacent-above", "adjacent-below",
+                            "place-left", "place-right",
+                            "place-above", "place-below",
+                            "disjoint" ])
+expected_invalid = placement_relations.union( set( ["below"] ) )
 
 def strip_invalid_attributes( elementname, attr ):
     for k in list( attr.keys() ):
@@ -105,6 +111,9 @@ def create_group( drawing, g, n ):
 
     
 def render_to_drawing( drawing, in_group, g, elems, parents = [] ):
+    elems = list( elems )
+    
+    # Assemble drawing first
     for e in elems:
         if e in parents:
             raise Exception( "Circular rendering at node '" + str( e ) + "'" )
@@ -122,18 +131,42 @@ def render_to_drawing( drawing, in_group, g, elems, parents = [] ):
             drawn, children = create_group( drawing, g, e )
             render_to_drawing( drawing, drawn, g, children, parents + [e] )
 
-
         if drawn is not None:
             g.nodes[e]["drawn"] = drawn
             drawn.doTransform()
             #print( "element", tag, "bounding box:", drawn.bounding_box )
-            in_group.addElement( drawn )
-            # Do this after the recursive call so the bounding box is
-            # correct.
+
+    # Look for any placement attributes
+    s = Solver( g )
+    for e in elems:
+        if "drawn" in g.nodes[e]:
+            for i,j,t in g.out_edges( e, data="tag" ):
+                if t in placement_relations:
+                    if j not in elems:
+                        print( "WARNING: ignoring cross-group placement {} -> {}".format( i, j ) )
+                        continue
+                    s.add_edge( i, t, j )
+
+    
+    if len( s.relations ) != 0:
+        s.start()
+        s.annealing()
+        print( "Placements:", s.best )
+        for n, (x,y) in s.best.items():
+            (x,y) = round_translation(x,y)
+            g.nodes[n]["drawn"].translate( x, y )
+            
+    # Add final locations to element
+    for e in elems:
+        if "drawn" in g.nodes[e]:
+            in_group.addElement( g.nodes[e]["drawn"] )
+
+def round_translation(x,y):
+    # FIXME: scale based on size of image?
+    return ( round( x, 6 ),
+             round( y, 6 ) )
         
 def graph_to_svg( g ):
-    # TODO: placement
-    # TODO: z-ordering within each group
     svg, elems = top_level_elements( g )
     
     d = svgwrite.Drawing( size=("8in","8in") )
@@ -144,13 +177,13 @@ def graph_to_svg( g ):
         x = consume_int( attr, "x", 0 )
         y = consume_int( attr, "y", 0 )
         d.viewbox( x, y, width, height )
-        # TODO: remaining elements?
+        # TODO: remaining attributes?
     else:
         d.viewbox( 0, 0, 200, 200 )
 
-    container = Element( d, bounding.GroupBoundingBox() )
+    container = Element( svg, d, bounding.GroupBoundingBox() )
     render_to_drawing( d, container, g, elems )
-
+    
     return d
 
 def find_order( graph, nodes ):

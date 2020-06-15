@@ -24,6 +24,12 @@ class BoundingBox(object):
         self.x2 += dx
         self.y1 += dy
         self.y2 += dy
+
+    def translate( self, dx, dy ):
+        self.x1 += dx
+        self.x2 += dx
+        self.y1 += dy
+        self.y2 += dy
         
     def __str__( self ):
         return "({},{})--({},{})".format( self.x1, self.y1, self.x2, self.y2 )

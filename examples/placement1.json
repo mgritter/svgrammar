@@ -1,0 +1,7 @@
+{
+    "version" : "0.1",
+
+    "start" : "A[box]; A->B [place-left]; B[box]; C[box]; C->B[place-left]; A->C [disjoint]; A->RED[stroke]; RED[red]; B->BLACK[stroke]; BLACK[black]; C->BLUE[stroke]; BLUE[blue]",
+
+    "R[box]" : "R[rect]; R->RX[x]; R->RY[y]; RX[100]; RY[100]; R->RW[width]; R->RH[height]; RW[10]; RH[10]; R->FILL[fill]; FILL[none];"
+}
