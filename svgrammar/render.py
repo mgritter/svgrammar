@@ -4,6 +4,19 @@ from .evaluate import extract_all_attributes
 import svgrammar.bounding as bounding
 from .placement import Solver
 
+def bang_reference( g, n, visited ):
+    if n in visited:
+        raise Exception( "Circular evaluation at node '" + str( n ) + "'" )
+
+    if g.nodes[n].get( "tag", None ) == "!":
+        successors = list( g.successors( n ) )
+        if len( successors ) > 1:
+            raise Exception( "Too many children in '!' node '" + str( n ) + "'" )
+        return bang_reference( g, successors[0], visited + [n] )
+    else:
+        return n
+
+    
 class Element(object):
     def __init__( self, n, svg, bb ):
         self.svg_element = svg
@@ -142,7 +155,9 @@ def render_to_drawing( drawing, in_group, g, elems, parents = [] ):
         if "drawn" in g.nodes[e]:
             for i,j,t in g.out_edges( e, data="tag" ):
                 if t in placement_relations:
+                    j = bang_reference( g, j,  [] )
                     if j not in elems:
+                        
                         print( "WARNING: ignoring cross-group placement {} -> {}".format( i, j ) )
                         continue
                     s.add_edge( i, t, j )

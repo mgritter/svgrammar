@@ -1,0 +1,13 @@
+{
+    "version" : "0.1",
+
+    "start" : "A[box]; A->B [adjacent-left]; B[box]; B->C [adjacent-left]; C[box]; D[box]; A->D [adjacent-above]; E[box]; B->E [adjacent-above]; F[box]; C->F [adjacent-above]; D->E [adjacent-left]; E->E2[adjacent-left]; E2[!]; E2->F",
+
+    "R[box]" : [
+        "R[rect]; R->RX[x]; R->RY[y]; RX[100]; RY[100]; R->RW[width]; R->RH[height]; RW[10]; RH[10]; R->FILL[fill]; FILL[none]; R->STROKE[stroke]; STROKE[black];",
+        "R[rect]; R->RX[x]; R->RY[y]; RX[100]; RY[100]; R->RW[width]; R->RH[height]; RW[10]; RH[10]; R->FILL[fill]; FILL[none]; R->STROKE[stroke]; STROKE[blue];",
+        "R[circle]; R->RX[cx]; R->RY[cy]; RX[100]; RY[100]; R->RR[r]; RR[5]; R->FILL[fill]; FILL[none]; R->STROKE[stroke]; STROKE[black];",
+        "R[circle]; R->RX[cx]; R->RY[cy]; RX[100]; RY[100]; R->RR[r]; RR[10]; R->FILL[fill]; FILL[none]; R->STROKE[stroke]; STROKE[red];"
+    ]
+    
+}
