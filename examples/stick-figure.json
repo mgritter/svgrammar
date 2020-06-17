@@ -1,0 +1,27 @@
+{
+    "version" : "0.1",
+
+    "start" : "R1[robot]; R2[robot]; R3[robot]; R1->R2[disjoint]; R2->R3[disjoint]; R3->R1[disjoint]; SVG[svg]; SVG->W[width]; SVG->H[height]; W[1000]; H[1000]; SVG->X[x]; SVG->Y[y]; X[-500]; Y[-500]",
+    
+    "G[robot]" : "A[head]; A->B[adjacent-above]; B[body]; L->B[adjacent-left]; L[g]; L->ARM; ARM[arm]; R->B[adjacent-right]; R[g]; R->FLIP[transform]; FLIP[scale(-1,1)]; R->ARM; F->B[adjacent-below]; F[feet]; G[g]; G->A; G->B; G->L; G->R; G->F",
+
+    "B[body]" : [
+        "B[rect]; B->BX[x]; B->BY[y]; B->BW[width]; B->BH[height]; B->BS[stroke]; B->BF[fill]; BX[70]; BY[50]; BW[60]; BH[100]; BS[black]; BF[none]"
+    ],
+
+    "H[head]" : [
+        "H[circle]; H->HX[cx]; H->HY[cy]; H->HR[r]; H->HS[stroke]; H->HF[fill]; HX[0]; HY[0]; HR[20]; HS[black]; HF[none]",
+        "H[rect]; H->HX[x]; H->HY[y]; H->HW[width]; H->HH[height]; H->HS[stroke]; H->HF[fill]; HX[0]; HY[0]; HW[40]; HH[40]; HS[black]; HF[none]"
+    ],
+
+    "F[feet]" : [
+        "F[circle]; F->FX[cx]; F->FY[cy]; F->FR[r]; F->FS[stroke]; F->FF[fill]; FX[0]; FY[0]; FR[30]; FS[black]; FF[gray]",
+        "F[rect]; F->FX[x]; F->FY[y]; F->FW[width]; F->FH[height]; F->FS[stroke]; F->FF[fill]; FX[0]; FY[0]; FW[100]; FH[10]; FS[black]; FF[none]"
+    ],
+
+    "L[arm]" : [
+        "L[rect]; L->LX[x]; L->LY[y]; L->LW[width]; L->LH[height]; L->LS[stroke]; L->LF[fill]; LX[-20]; LY[0]; LW[40]; LH[5]; LS[black]; LF[none];"
+    ]
+    
+}
+    

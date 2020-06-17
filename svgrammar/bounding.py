@@ -1,7 +1,7 @@
 """Bounding box data structure and calculations."""
 import re
 
-translate_re = re.compile( "translate\(\s*(\d+(\.\d+)?)(\s+|\s*,\s*)(\d+(\.\d+)?)\s*\)")
+translate_re = re.compile( "translate\(\s*(-?\d+(\.\d+)?)(\s+|\s*,\s*)(-?\d+(\.\d+)?)\s*\)")
 
 class BoundingBox(object):
     def __init__( self ):

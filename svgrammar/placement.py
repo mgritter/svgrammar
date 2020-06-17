@@ -179,7 +179,7 @@ class Solver(object):
         if len( self.movable ) > 1:
             a,b = random.sample( self.movable, 2 )
         else:
-            a = random.sample( self.movable, 1 )
+            a = random.sample( self.movable, 1 )[0]
             b = None
             
         np = positions.copy()

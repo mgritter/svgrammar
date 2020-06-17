@@ -32,7 +32,12 @@ class Element(object):
             self.bounding_box.applyTransform( self.svg_element.attribs["transform"] )
 
     def translate( self, dx, dy ):
+        # We want this operation to be performed *last*, so it must
+        # appear *first* in the list.
+        tmp = " " + self.svg_element.attribs.get("transform", "") 
+        self.svg_element.attribs["transform"] = ""
         self.svg_element.translate( dx, dy )
+        self.svg_element.attribs["transform"] += tmp
         self.bounding_box.translate( dx, dy )
         
 svgElements = [ 'g', 'svg', 'rect', 'circle', 'path' ]
@@ -130,9 +135,13 @@ def render_to_drawing( drawing, in_group, g, elems, parents = [] ):
     for e in elems:
         if e in parents:
             raise Exception( "Circular rendering at node '" + str( e ) + "'" )
-            
+
+
+        e = bang_reference( g, e, parents )
+        
         tag = g.nodes[e]["tag"]
         drawn = None
+        print( "Rendering", e, "tag", tag )
         
         if tag == "rect":
             drawn = draw_rect( drawing, g, e )
@@ -147,7 +156,7 @@ def render_to_drawing( drawing, in_group, g, elems, parents = [] ):
         if drawn is not None:
             g.nodes[e]["drawn"] = drawn
             drawn.doTransform()
-            #print( "element", tag, "bounding box:", drawn.bounding_box )
+            print( "element", tag, e, "bounding box:", drawn.bounding_box )
 
     # Look for any placement attributes
     s = Solver( g )
@@ -187,10 +196,10 @@ def graph_to_svg( g ):
     d = svgwrite.Drawing( size=("8in","8in") )
     if svg is not None:
         attr = extract_all_attributes( g, svg )
-        width = consume_int( attr, "width", 200 )
-        height = consume_int( attr, "height", 200 )
-        x = consume_int( attr, "x", 0 )
-        y = consume_int( attr, "y", 0 )
+        width = consume_float( attr, "width", 200 )
+        height = consume_float( attr, "height", 200 )
+        x = consume_float( attr, "x", 0 )
+        y = consume_float( attr, "y", 0 )
         d.viewbox( x, y, width, height )
         # TODO: remaining attributes?
     else:
@@ -248,7 +257,7 @@ def top_level_elements( g ):
             if not has_group_parent( inclusionGraph, n ):
                 topLevel.add( n )
 
-    #print( "Top level: ", topLevel )
+    print( "Top level: ", topLevel )
     
     return topTag, find_order( g, topLevel )
 
