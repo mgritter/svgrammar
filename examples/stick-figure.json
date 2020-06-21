@@ -1,26 +1,45 @@
 {
     "version" : "0.1",
 
-    "start" : "R1[robot]; R2[robot]; R3[robot]; R1->R2[disjoint]; R2->R3[disjoint]; R3->R1[disjoint]; SVG[svg]; SVG->W[width]; SVG->H[height]; W[1000]; H[1000]; SVG->X[x]; SVG->Y[y]; X[-500]; Y[-500]",
+    "start" : "R1[robot]; R2[robot]; R3[robot]; R4[robot]; R5[robot]; R6[robot]; R1->R2[disjoint]; R1->R3[disjoint]; R1->R4[disjoint]; R1->R5[disjoint]; R1->R6[disjoint]; R2->R3[disjoint]; R2->R4[disjoint]; R2->R5[disjoint]; R2->R6[disjoint]; R3->R4[disjoint]; R3->R5[disjoint]; R3->R6[disjoint]; R4->R5[disjoint]; R4->R6[disjoint]; R5->R6[disjoint]; SVG[svg]; SVG->W[width]; SVG->H[height]; W[1000]; H[1000]; SVG->X[x]; SVG->Y[y]; X[-500]; Y[-500]",
     
     "G[robot]" : "A[head]; A->B[adjacent-above]; B[body]; L->B[adjacent-left]; L[g]; L->ARM; ARM[arm]; R->B[adjacent-right]; R[g]; R->FLIP[transform]; FLIP[scale(-1,1)]; R->ARM; F->B[adjacent-below]; F[feet]; G[g]; G->A; G->B; G->L; G->R; G->F",
 
     "B[body]" : [
-        "B[rect]; B->BX[x]; B->BY[y]; B->BW[width]; B->BH[height]; B->BS[stroke]; B->BF[fill]; BX[70]; BY[50]; BW[60]; BH[100]; BS[black]; BF[none]"
+        "B[rect]; B->BX[x]; B->BY[y]; B->BW[width]; B->BH[height]; B->BS[stroke]; B->BF[fill]; BX[70]; BY[50]; BW[60]; BH[100]; BS[black]; BF[none]",
+        "B[rect]; B->BX[x]; B->BY[y]; B->BW[width]; B->BH[height]; B->BS[stroke]; B->BF[fill]; BX[70]; BY[50]; BW[60]; BH[60]; BS[black]; BF[none]",
+        "B[rect]; B->BX[x]; B->BY[y]; B->BW[width]; B->BH[height]; B->BS[stroke]; B->BF[fill]; BX[70]; BY[50]; BW[30]; BH[90]; BS[black]; BF[none]",
+        "B[circle]; B->BX[cx]; B->BY[cy]; B->BR[r]; B->BS[stroke]; B->BF[fill]; BX[70]; BY[70]; BR[30]; BS[black]; BF[none]"
     ],
 
-    "H[head]" : [
-        "H[circle]; H->HX[cx]; H->HY[cy]; H->HR[r]; H->HS[stroke]; H->HF[fill]; HX[0]; HY[0]; HR[20]; HS[black]; HF[none]",
-        "H[rect]; H->HX[x]; H->HY[y]; H->HW[width]; H->HH[height]; H->HS[stroke]; H->HF[fill]; HX[0]; HY[0]; HW[40]; HH[40]; HS[black]; HF[none]"
+    "HG[head]" : [
+        "HG[g]; HG->H; H[circle]; H->HX[cx]; H->HY[cy]; H->HR[r]; H->HS[stroke]; H->HF[fill]; HX[0]; HY[0]; HR[20]; HS[black]; HF[none]; EYES[eyes]; HG->EYES",
+        "HG[g]; HG->H; H[rect]; H->HX[x]; H->HY[y]; H->HW[width]; H->HH[height]; H->HS[stroke]; H->HF[fill]; HX[0]; HY[0]; HW[40]; HH[40]; HS[black]; HF[none]; EYES[eyes]; HG->EYES; EYES->POSITION[transform]; POSITION[translate(20,20)]"
+    ],
+
+    "E[eyes]" : "E[g]; E->LEFTEYE; E->RIGHTEYE; RIGHTEYE[eye]; LEFTEYE[g]; LEFTEYE->FLIP[transform]; FLIP[scale(-1,1)]; LEFTEYE->RIGHTEYE",
+
+    "E[eye]" : [
+        "E[circle]; E->EX[cx]; E->EY[cy]; E->ER[r]; E->ES[stroke]; E->EF[fill]; EX[7]; EY[0]; ER[4]; ES[black]; EF[blue]",
+        "E[circle]; E->EX[cx]; E->EY[cy]; E->ER[r]; E->ES[stroke]; E->EF[fill]; EX[7]; EY[0]; ER[4]; ES[black]; EF[red]",
+        "E[circle]; E->EX[cx]; E->EY[cy]; E->ER[r]; E->ES[stroke]; E->EF[fill]; EX[7]; EY[0]; ER[4]; ES[black]; EF[green]",
+        "E[rect]; E->EX[x]; E->EY[y]; E->EW[width]; E->EH[height]; E->ES[stroke]; E->EF[fill]; EX[3]; EY[-3]; EW[6]; EH[6]; ES[black]; EF[green]",
+        "E[rect]; E->EX[x]; E->EY[y]; E->EW[width]; E->EH[height]; E->ES[stroke]; E->EF[fill]; EX[3]; EY[-3]; EW[6]; EH[6]; ES[black]; EF[red]",
+        "E[rect]; E->EX[x]; E->EY[y]; E->EW[width]; E->EH[height]; E->ES[stroke]; E->EF[fill]; EX[3]; EY[-3]; EW[6]; EH[6]; ES[black]; EF[blue]"
     ],
 
     "F[feet]" : [
         "F[circle]; F->FX[cx]; F->FY[cy]; F->FR[r]; F->FS[stroke]; F->FF[fill]; FX[0]; FY[0]; FR[30]; FS[black]; FF[gray]",
-        "F[rect]; F->FX[x]; F->FY[y]; F->FW[width]; F->FH[height]; F->FS[stroke]; F->FF[fill]; FX[0]; FY[0]; FW[100]; FH[10]; FS[black]; FF[none]"
+        "F[g]; F->F1; F->F2; F1[circle]; F1->F1X[cx]; F1->F1Y[cy]; F1->FR[r]; F1->FS[stroke]; F1->FF[fill]; F1X[0]; F1Y[0]; FR[15]; FS[black]; FF[gray]; F2[circle]; F2->F2X[cx]; F2->F2Y[cy]; F2->FR[r]; F2->FS[stroke]; F2->FF[fill]; F2X[30]; F2Y[0]",
+        "F[rect]; F->FX[x]; F->FY[y]; F->FW[width]; F->FH[height]; F->FS[stroke]; F->FF[fill]; FX[0]; FY[0]; FW[100]; FH[10]; FS[black]; FF[none]",
+        "F[g]; F->F1; F->F2; F1[rect]; F1->F1X[x]; F1->F1Y[y]; F1->FW[width]; F1->FH[height]; F1->FS[stroke]; F1->FF[fill]; F1X[0]; F1Y[0]; FW[20]; FH[20]; FS[black]; FF[none]; F2[rect]; F2->F2X[x]; F2->F2Y[y]; F2->FW[width]; F2->FH[height]; F2->FS[stroke]; F2->FF[fill]; F2X[30]; F2Y[0];"
     ],
 
     "L[arm]" : [
-        "L[rect]; L->LX[x]; L->LY[y]; L->LW[width]; L->LH[height]; L->LS[stroke]; L->LF[fill]; LX[-20]; LY[0]; LW[40]; LH[5]; LS[black]; LF[none];"
+        "L[rect]; L->LX[x]; L->LY[y]; L->LW[width]; L->LH[height]; L->LS[stroke]; L->LF[fill]; LX[-20]; LY[0]; LW[40]; LH[5]; LS[black]; LF[none];",
+        "L[path]; L->LPATH[d]; L->LS[stroke]; L->LF[fill]; LS[black]; LF[none]; LPATH[M 35 35 L 0 0 M 35 70]",
+        "L[path]; L->LPATH[d]; L->LS[stroke]; L->LF[fill]; LS[black]; LF[none]; LPATH[M 35 35 L 0 0 A 5 5 0 1 0 -7 -7 A 5 5 0 1 0 0 0 M 35 70]"
+
     ]
     
 }

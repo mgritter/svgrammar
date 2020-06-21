@@ -1,8 +1,31 @@
 """Bounding box data structure and calculations."""
 import re
 
-translate_re = re.compile( "translate\(\s*(-?\d+(\.\d+)?)(\s+|\s*,\s*)(-?\d+(\.\d+)?)\s*\)")
+translate_re = re.compile( "translate\(\s*(-?\d+(\.\d+)?)(\s+|\s*,\s*)(-?\d+(\.\d+)?)\s*\)" )
+scale_re = re.compile( "scale\(\s*(-?\d+(\.\d+)?)(\s+|\s*,\s*)(-?\d+(\.\d+)?)\s*\)" )
 
+def parse_transforms( s ):
+    txs = []
+
+    while len( s ) > 0:
+        m = translate_re.match( s )
+        if m is not None:
+            txs.append( ( "translate", float( m.group(1) ), float( m.group(4) ) ) )
+            s = s[len(m.group(0)):].lstrip()
+            continue
+
+        m = scale_re.match( s )
+        if m is not None:
+            txs.append( ( "scale", float( m.group(1) ), float( m.group(4) ) ) )
+            s = s[len(m.group(0)):].lstrip()
+            continue
+
+        print( "Warning: unmatched transform '{}'".format( transform ) )
+        break
+
+    return txs
+    
+    
 class BoundingBox(object):
     def __init__( self ):
         self.x1 = None
@@ -12,18 +35,29 @@ class BoundingBox(object):
 
 
     def applyTransform( self, transform ):
-        # TODO: handle rotate/skew?
-        m = translate_re.search( transform )
-        if m is None:
-            print( "Warning: unmatched transform '{}'".format( transform ) )
-            return
-        dx = float( m.group( 1 ) )
-        dy = float( m.group( 4 ) )
-        #print( "Translating by", dx, dy )
-        self.x1 += dx
-        self.x2 += dx
-        self.y1 += dy
-        self.y2 += dy
+        # TODO: handle rotate
+
+        # Apply in reverse order
+        for t in reversed( parse_transforms( transform ) ):
+            if t[0] == "translate":
+                _, dx, dy = t
+                #print( "Translating by", dx, dy )
+                self.x1 += dx
+                self.x2 += dx
+                self.y1 += dy
+                self.y2 += dy
+            elif t[0] == "scale":
+                _, sx, sy = t
+                self.x1 *= sx
+                self.x2 *= sx
+                if self.x2 < self.x1:
+                    self.x1, self.x2 = self.x2, self.x1
+                self.y1 *= sy
+                self.y2 *= sy
+                if self.y2 < self.y1:
+                    self.y1, self.y2 = self.y2, self.y1
+            else:
+                print( "Warning: unhandled transform '{}'".format( t ) )
 
     def translate( self, dx, dy ):
         self.x1 += dx
@@ -92,8 +126,12 @@ def simulate_path( d ):
     y = None
     firstPoint = None
     
-    try:
-        kw = next( path )
+    while True:
+        try:
+            kw = next( path )
+        except StopIteration:
+            return
+        
         if kw == "M" or kw == "L":
             x = float( next( path ) )
             y = float( next( path ) )
@@ -158,13 +196,12 @@ def simulate_path( d ):
             yield (x,y)
         else:
             raise Exception( "Unhandled SVG path command '{}'".format( kw ) )
-    except StopIteration:
-        pass
     
 class PathBoundingBox(BoundingBox):
     def __init__( self, d ):
         super().__init__()
         for x,y in simulate_path( d ):
+            #print( "Path visited", (x,y) )
             self.x1 = none_min( self.x1, x )
             self.y1 = none_min( self.y1, y )
             self.x2 = none_max( self.x2, x )

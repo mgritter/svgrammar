@@ -1,5 +1,12 @@
 import networkx as nx
 
+# FIXME: have a single definition
+placement_relations = set( ["adjacent-left", "adjacent-right",
+                            "adjacent-above", "adjacent-below",
+                            "place-left", "place-right",
+                            "place-above", "place-below",
+                            "disjoint" ])
+
 class Evaluation(object):
     def __init__( self, graph, in_list = False ):
         self.graph = graph
@@ -57,6 +64,8 @@ class Evaluation(object):
         for tag, j in self.children( n ):
             if tag is None:
                 continue
+            if tag in placement_relations:
+                continue
             if tag in kv:
                 raise Exception( "Duplicate keyword {} in node {}".format( tag, n ) )
             kv[tag] = self.node_value( j, [n] )
@@ -69,6 +78,8 @@ class Evaluation(object):
         kv = {}
         for tag, j in self.children( n ):
             if tag is None:
+                continue
+            if tag in placement_relations:
                 continue
             if tag in kv:
                 raise Exception( "Duplicate keyword {} in node {}".format( tag, n ) )
